@@ -11,6 +11,8 @@ This script allows you to modify the money value in RPG save files for the game 
 ## Requirements
 
 - Python 3.8 or higher
+- Windows operating system
+- Save File Path: `C:\Users\<username>\AppData\Local\User Data\`
 - `autopep8` for code formatting (optional)
 
 ## Installation
