@@ -44,4 +44,4 @@ This script allows you to modify the money value in RPG save files for the game 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](http://_vscodecontentref_/1) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/nat236919/the-genesis-order-money-cheat/blob/main/LICENSE) file for details.
