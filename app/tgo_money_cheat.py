@@ -28,21 +28,21 @@ class TGOMoneyCheat:
         Retrieves the list of RPG save files from the save file directory.
         """
         self.save_files = [
-            file for file in os.listdir(self.save_file_dir)
-            if file.startswith('DefaultTGOfile') and file.endswith('.rpgsave')
+            file for file in self.save_file_dir.iterdir()
+            if file.name.startswith('DefaultTGOfile') and file.name.endswith('.rpgsave')
         ]
     
-    def _read_save_file(self, save_file: str) -> str:
+    def _read_save_file(self, save_file: Path) -> str:
         """
         Reads the content of a save file.
 
         Args:
-            save_file (str): The name of the save file to read.
+            save_file (Path): The path of the save file to read.
 
         Returns:
             str: The content of the save file.
         """
-        with open(self.save_file_dir / save_file, 'r') as f:
+        with save_file.open('r') as f:
             return f.read()
     
     def _decode_save_file_content(self, save_file_content: str) -> Dict[str, Any]:
@@ -77,7 +77,8 @@ class TGOMoneyCheat:
             save_file_content (Dict[str, Any]): The modified save file content.
         """
         logging.info('Saving temporary save file...')
-        with open(self.save_file_dir / self.temp_file_name, 'w') as f:
+        temp_save_path = self.save_file_dir / self.temp_file_name
+        with temp_save_path.open('w') as f:
             json.dump(save_file_content, f, indent=4, sort_keys=True)
         logging.info('Temporary save file saved.')
     
@@ -89,15 +90,16 @@ class TGOMoneyCheat:
             save_file_num (int): The number of the save file to replace.
         """
         logging.info('Backing up original save file...')
-        backup_save_file = self.save_file_dir / f'{self.save_files[save_file_num - 1]}.bak'
+        original_save_file = self.save_file_dir / self.save_files[save_file_num - 1]
+        backup_save_file = original_save_file.with_suffix('.bak')
         
         logging.info('Creating new save file...')
-        with open(self.save_file_dir / self.temp_file_name, 'r') as f:
+        temp_save_path = self.save_file_dir / self.temp_file_name
+        with temp_save_path.open('r') as f:
             temp_save_file = json.load(f)
         encoded_save_file = self._encode_json_to_save_file_content(temp_save_file)
-        original_save_file = self.save_file_dir / self.save_files[save_file_num - 1]
-        os.rename(original_save_file, backup_save_file)
-        with open(original_save_file, 'w') as f:
+        original_save_file.rename(backup_save_file)
+        with original_save_file.open('w') as f:
             f.write(encoded_save_file)
         
         logging.info('New save file created.')
@@ -107,7 +109,8 @@ class TGOMoneyCheat:
         Deletes the temporary save file.
         """
         logging.info('Cleaning up temporary save file...')
-        os.remove(self.save_file_dir / self.temp_file_name)
+        temp_save_path = self.save_file_dir / self.temp_file_name
+        temp_save_path.unlink()
         logging.info('Temporary save file deleted.')
     
     def _select_save_file(self) -> int:
@@ -121,11 +124,11 @@ class TGOMoneyCheat:
             ValueError: If the selected save file number is invalid.
         """
         for i, file in enumerate(self.save_files):
-            logging.info(f'{i + 1}. {file}')
+            logging.info(f'{i + 1}. {file.name}')
         
         while True:
             try:
-                save_file_num = int(input('Select a save file: '))
+                save_file_num = int(input('Select a save file (number): '))
                 if 1 <= save_file_num <= len(self.save_files):
                     return save_file_num
                 else:
@@ -174,10 +177,10 @@ class TGOMoneyCheat:
         self._get_rpg_save_files()
         
         if not self.save_files:
-            logging.error('Save file not found!')
+            logging.error('No save files found!')
             return
         
-        logging.info('Save file found')
+        logging.info('Save files found')
         
         try:
             save_file_num = self._select_save_file()
@@ -188,8 +191,8 @@ class TGOMoneyCheat:
         selected_save_file = self._read_save_file(self.save_files[save_file_num - 1])
         decoded_save_file = self._decode_save_file_content(selected_save_file)
         
-        current_money = self._get_user_input('Enter the current money: ')
-        new_money = self._get_user_input('Enter the new money: ')
+        current_money = self._get_user_input('Enter the current money value in the save file: ')
+        new_money = self._get_user_input('Enter the new money value you want to set: ')
         
         self._modify_save_file(decoded_save_file, current_money, new_money)
         if not self.is_money_modified:
@@ -200,6 +203,7 @@ class TGOMoneyCheat:
         self._create_new_save_file_from_temp(save_file_num)
         self._clean_temp_save_file()
         logging.info('Money value successfully modified.')
+
 
 if __name__ == '__main__':
     tgo = TGOMoneyCheat()
