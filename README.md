@@ -2,6 +2,8 @@
 
 Money Cheat Script for The Genesis Order
 
+![image](https://github.com/user-attachments/assets/a0b82308-c03d-42d0-8a00-412ba8b48759)
+
 ## Overview
 
 This script allows you to modify the money value in RPG save files for the game [The Genesis Order](https://store.steampowered.com/app/2553870/The_Genesis_Order/) . It reads the save files, decodes and decompresses them, modifies the money value, and then re-encodes and compresses the save files.
