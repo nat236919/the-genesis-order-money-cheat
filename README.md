@@ -23,16 +23,11 @@ This script allows you to modify the money value in RPG save files for the game 
     cd the-genesis-order-money-cheat
     ```
 
-2. Install the required packages:
-    ```sh
-    pip install -r requirements.txt
-    ```
-
 ## Usage
 
 1. Run the script:
     ```sh
-    python app/tgo_money_cheat.py
+    python tgo_money_cheat.py
     ```
 
 2. Follow the prompts:
