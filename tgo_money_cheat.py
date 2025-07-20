@@ -306,6 +306,7 @@ class LZString:
         num_bits: int = 3
         entry: str = ''
         result: list = []
+        max_dict_size: int = 1 << 16  # Set maximum dictionary size
 
         data = LZString.Object(
             val=get_next_value(0),
@@ -438,9 +439,10 @@ class LZString:
             result.append(entry)
 
             # Add w+entry[0] to the dictionary.
-            dictionary[dict_size] = w + entry[0]
-            dict_size += 1
-            enlarge_in -= 1
+            if dict_size < max_dict_size:  # Check dictionary size before adding
+                dictionary[dict_size] = w + entry[0]
+                dict_size += 1
+                enlarge_in -= 1
 
             w = entry
             if enlarge_in == 0:
@@ -626,13 +628,39 @@ class TGOMoneyCheat:
             new_money (int): The new money value to set in the save file.
         """
         variables = decoded_save_file.get('variables')
-        game_variables = variables['_data']['@a']
+        if not variables or not isinstance(variables, dict):
+            logging.error(
+                'Invalid save file structure: variables section not found or invalid')
+            return
 
-        for idx, game_var in enumerate(game_variables):
-            if isinstance(game_var, int) and game_var == current_money:
-                game_variables[idx] = new_money
-                self.is_money_modified = True
-                break
+        game_variables = variables.get('_data', {}).get('@a', [])
+        if not isinstance(game_variables, list):
+            logging.error(
+                'Invalid save file structure: game variables section not found or invalid')
+            return
+
+        # Money is typically stored in a specific variable slot in RPG Maker games
+        # For The Genesis Order, we'll look for it in the first 100 variables
+        money_variable_range = min(100, len(game_variables))
+        found_matches = []
+
+        for idx in range(money_variable_range):
+            if isinstance(game_variables[idx], int) and game_variables[idx] == current_money:
+                found_matches.append(idx)
+
+        if len(found_matches) == 0:
+            logging.error(
+                'Money value not found in the expected variable range')
+            return
+        elif len(found_matches) > 1:
+            logging.warning(
+                f'Multiple matches found for money value {current_money} at indices: {found_matches}')
+            logging.warning(
+                'Using the first occurrence to avoid potential save file corruption')
+
+        # Update the first matching occurrence
+        game_variables[found_matches[0]] = new_money
+        self.is_money_modified = True
 
     def _get_user_input(self, prompt: str) -> int:
         """
