@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class LZString:
@@ -29,7 +30,8 @@ class LZString:
         """
         if uncompressed is None:
             return ''
-        res = LZString._compress(uncompressed, 6, lambda a: LZString.key_str_base_64[a])
+        res = LZString._compress(
+            uncompressed, 6, lambda a: LZString.key_str_base_64[a])
         # To produce valid Base64
         end = len(res) % 4
         if end > 0:
@@ -119,16 +121,19 @@ class LZString:
                             context_data_val = (context_data_val << 1)
                             if context_data_position == bits_per_char - 1:
                                 context_data_position = 0
-                                context_data.append(get_char_from_int(context_data_val))
+                                context_data.append(
+                                    get_char_from_int(context_data_val))
                                 context_data_val = 0
                             else:
                                 context_data_position += 1
                         value = ord(context_w[0])
                         for i in range(8):
-                            context_data_val = (context_data_val << 1) | (value & 1)
+                            context_data_val = (
+                                context_data_val << 1) | (value & 1)
                             if context_data_position == bits_per_char - 1:
                                 context_data_position = 0
-                                context_data.append(get_char_from_int(context_data_val))
+                                context_data.append(
+                                    get_char_from_int(context_data_val))
                                 context_data_val = 0
                             else:
                                 context_data_position += 1
@@ -140,17 +145,20 @@ class LZString:
                             context_data_val = (context_data_val << 1) | value
                             if context_data_position == bits_per_char - 1:
                                 context_data_position = 0
-                                context_data.append(get_char_from_int(context_data_val))
+                                context_data.append(
+                                    get_char_from_int(context_data_val))
                                 context_data_val = 0
                             else:
                                 context_data_position += 1
                             value = 0
                         value = ord(context_w[0])
                         for i in range(16):
-                            context_data_val = (context_data_val << 1) | (value & 1)
+                            context_data_val = (
+                                context_data_val << 1) | (value & 1)
                             if context_data_position == bits_per_char - 1:
                                 context_data_position = 0
-                                context_data.append(get_char_from_int(context_data_val))
+                                context_data.append(
+                                    get_char_from_int(context_data_val))
                                 context_data_val = 0
                             else:
                                 context_data_position += 1
@@ -163,10 +171,12 @@ class LZString:
                 else:
                     value = context_dictionary[context_w]
                     for i in range(context_num_bits):
-                        context_data_val = (context_data_val << 1) | (value & 1)
+                        context_data_val = (
+                            context_data_val << 1) | (value & 1)
                         if context_data_position == bits_per_char - 1:
                             context_data_position = 0
-                            context_data.append(get_char_from_int(context_data_val))
+                            context_data.append(
+                                get_char_from_int(context_data_val))
                             context_data_val = 0
                         else:
                             context_data_position += 1
@@ -190,16 +200,19 @@ class LZString:
                         context_data_val = (context_data_val << 1)
                         if context_data_position == bits_per_char - 1:
                             context_data_position = 0
-                            context_data.append(get_char_from_int(context_data_val))
+                            context_data.append(
+                                get_char_from_int(context_data_val))
                             context_data_val = 0
                         else:
                             context_data_position += 1
                     value = ord(context_w[0])
                     for i in range(8):
-                        context_data_val = (context_data_val << 1) | (value & 1)
+                        context_data_val = (
+                            context_data_val << 1) | (value & 1)
                         if context_data_position == bits_per_char - 1:
                             context_data_position = 0
-                            context_data.append(get_char_from_int(context_data_val))
+                            context_data.append(
+                                get_char_from_int(context_data_val))
                             context_data_val = 0
                         else:
                             context_data_position += 1
@@ -210,17 +223,20 @@ class LZString:
                         context_data_val = (context_data_val << 1) | value
                         if context_data_position == bits_per_char - 1:
                             context_data_position = 0
-                            context_data.append(get_char_from_int(context_data_val))
+                            context_data.append(
+                                get_char_from_int(context_data_val))
                             context_data_val = 0
                         else:
                             context_data_position += 1
                         value = 0
                     value = ord(context_w[0])
                     for i in range(16):
-                        context_data_val = (context_data_val << 1) | (value & 1)
+                        context_data_val = (
+                            context_data_val << 1) | (value & 1)
                         if context_data_position == bits_per_char - 1:
                             context_data_position = 0
-                            context_data.append(get_char_from_int(context_data_val))
+                            context_data.append(
+                                get_char_from_int(context_data_val))
                             context_data_val = 0
                         else:
                             context_data_position += 1
@@ -236,7 +252,8 @@ class LZString:
                     context_data_val = (context_data_val << 1) | (value & 1)
                     if context_data_position == bits_per_char - 1:
                         context_data_position = 0
-                        context_data.append(get_char_from_int(context_data_val))
+                        context_data.append(
+                            get_char_from_int(context_data_val))
                         context_data_val = 0
                     else:
                         context_data_position += 1
@@ -434,6 +451,7 @@ class LZString:
         """
         A helper class to store values for decompression.
         """
+
         def __init__(self, **kwargs):
             """
             Initialize the Object with given keyword arguments.
@@ -449,7 +467,7 @@ class TGOMoneyCheat:
     """
     A class to modify the money value in RPG save files for 'The Genesis Order' game.
     """
-    
+
     def __init__(self):
         """
         Initializes the TGOMoneyCheat class with default values.
@@ -464,18 +482,23 @@ class TGOMoneyCheat:
         """
         Checks if the necessary prerequisites are met for the cheat to work.
         """
-        logging.info('Checking prerequisites...')        
+        logging.info('Checking prerequisites...')
         if os.name != 'nt':
             logging.error('This script is designed to run on Windows only.')
-            raise EnvironmentError('This script is designed to run on Windows only.')
-        
+            raise EnvironmentError(
+                'This script is designed to run on Windows only.')
+
         if not self.save_file_dir.exists():
-            logging.error(f'Save file directory does not exist: {self.save_file_dir}')
-            raise FileNotFoundError(f'Save file directory does not exist: {self.save_file_dir}')
+            logging.error(
+                f'Save file directory does not exist: {self.save_file_dir}')
+            raise FileNotFoundError(
+                f'Save file directory does not exist: {self.save_file_dir}')
 
         if not self.save_file_dir.is_dir():
-            logging.error(f'Save file path is not a directory: {self.save_file_dir}')
-            raise NotADirectoryError(f'Save file path is not a directory: {self.save_file_dir}')
+            logging.error(
+                f'Save file path is not a directory: {self.save_file_dir}')
+            raise NotADirectoryError(
+                f'Save file path is not a directory: {self.save_file_dir}')
 
     def _get_rpg_save_files(self) -> None:
         """
@@ -485,7 +508,7 @@ class TGOMoneyCheat:
             file for file in self.save_file_dir.iterdir()
             if file.name.startswith('DefaultTGOfile') and file.name.endswith('.rpgsave')
         ]
-    
+
     def _read_save_file(self, save_file: Path) -> str:
         """
         Reads the content of a save file.
@@ -498,7 +521,7 @@ class TGOMoneyCheat:
         """
         with save_file.open('r') as f:
             return f.read()
-    
+
     def _decode_save_file_content(self, save_file_content: str) -> Dict[str, Any]:
         """
         Decodes the content of a save file from base64 and decompresses it.
@@ -510,7 +533,7 @@ class TGOMoneyCheat:
             Dict[str, Any]: The decoded and decompressed content of the save file.
         """
         return json.loads(self.lz.decompress_to_base_64(save_file_content))
-    
+
     def _encode_json_to_save_file_content(self, json_content: Dict[str, Any]) -> str:
         """
         Encodes and compresses JSON content to base64.
@@ -522,7 +545,7 @@ class TGOMoneyCheat:
             str: The base64 encoded and compressed content.
         """
         return self.lz.compress_to_base_64(json.dumps(json_content))
-    
+
     def _save_temp_save_file(self, save_file_content: Dict[str, Any]) -> None:
         """
         Saves the modified save file content to a temporary file.
@@ -535,7 +558,7 @@ class TGOMoneyCheat:
         with temp_save_path.open('w') as f:
             json.dump(save_file_content, f, indent=4, sort_keys=True)
         logging.info('Temporary save file saved.')
-    
+
     def _create_new_save_file_from_temp(self, save_file_num: int) -> None:
         """
         Creates a new save file from the temporary file and backs up the original save file.
@@ -544,20 +567,22 @@ class TGOMoneyCheat:
             save_file_num (int): The number of the save file to replace.
         """
         logging.info('Backing up original save file...')
-        original_save_file = self.save_file_dir / self.save_files[save_file_num - 1]
+        original_save_file = self.save_file_dir / \
+            self.save_files[save_file_num - 1]
         backup_save_file = original_save_file.with_suffix('.bak')
-        
+
         logging.info('Creating new save file...')
         temp_save_path = self.save_file_dir / self.temp_file_name
         with temp_save_path.open('r') as f:
             temp_save_file = json.load(f)
-        encoded_save_file = self._encode_json_to_save_file_content(temp_save_file)
+        encoded_save_file = self._encode_json_to_save_file_content(
+            temp_save_file)
         original_save_file.rename(backup_save_file)
         with original_save_file.open('w') as f:
             f.write(encoded_save_file)
-        
+
         logging.info('New save file created.')
-    
+
     def _clean_temp_save_file(self) -> None:
         """
         Deletes the temporary save file.
@@ -566,7 +591,7 @@ class TGOMoneyCheat:
         temp_save_path = self.save_file_dir / self.temp_file_name
         temp_save_path.unlink()
         logging.info('Temporary save file deleted.')
-    
+
     def _select_save_file(self) -> int:
         """
         Prompts the user to select a save file from the list of available save files.
@@ -579,17 +604,18 @@ class TGOMoneyCheat:
         """
         for i, file in enumerate(self.save_files):
             logging.info(f'{i + 1}. {file.name}')
-        
+
         while True:
             try:
                 save_file_num = int(input('Select a save file (number): '))
                 if 1 <= save_file_num <= len(self.save_files):
                     return save_file_num
                 else:
-                    logging.error('Invalid save file number! Please try again.')
+                    logging.error(
+                        'Invalid save file number! Please try again.')
             except ValueError:
                 logging.error('Invalid input! Please enter a number.')
-    
+
     def _modify_save_file(self, decoded_save_file: Dict[str, Any], current_money: int, new_money: int) -> None:
         """
         Modifies the money value in the decoded save file content.
@@ -601,7 +627,7 @@ class TGOMoneyCheat:
         """
         variables = decoded_save_file.get('variables')
         game_variables = variables['_data']['@a']
-        
+
         for idx, game_var in enumerate(game_variables):
             if isinstance(game_var, int) and game_var == current_money:
                 game_variables[idx] = new_money
@@ -641,18 +667,22 @@ class TGOMoneyCheat:
         except ValueError as e:
             logging.error(e)
             return
-        
-        selected_save_file = self._read_save_file(self.save_files[save_file_num - 1])
+
+        selected_save_file = self._read_save_file(
+            self.save_files[save_file_num - 1])
         decoded_save_file = self._decode_save_file_content(selected_save_file)
-        
-        current_money = self._get_user_input('Enter the current money value in the save file: ')
-        new_money = self._get_user_input('Enter the new money value you want to set: ')
-        
+
+        current_money = self._get_user_input(
+            'Enter the current money value in the save file: ')
+        new_money = self._get_user_input(
+            'Enter the new money value you want to set: ')
+
         self._modify_save_file(decoded_save_file, current_money, new_money)
         if not self.is_money_modified:
-            logging.error('Money value not found in the save file! No changes made.')
+            logging.error(
+                'Money value not found in the save file! No changes made.')
             return
-        
+
         self._save_temp_save_file(decoded_save_file)
         self._create_new_save_file_from_temp(save_file_num)
         self._clean_temp_save_file()

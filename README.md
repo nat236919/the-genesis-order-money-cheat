@@ -18,22 +18,24 @@ This script allows you to modify the money value in RPG save files for the game 
 ## Installation
 
 1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/the-genesis-order-money-cheat.git
-    cd the-genesis-order-money-cheat
-    ```
+   ```sh
+   git clone https://github.com/yourusername/the-genesis-order-money-cheat.git
+   cd the-genesis-order-money-cheat
+   ```
 
 ## Usage
 
 1. Run the script:
-    ```sh
-    python tgo_money_cheat.py
-    ```
+
+   ```sh
+   python tgo_money_cheat.py
+   ```
 
 2. Follow the prompts:
-    - Select a save file from the list of available save files.
-    - Enter the current money value in the save file (for searching)
-    - Enter the new money value you want to set in the save file.
+
+   - Select a save file from the list of available save files.
+   - Enter the current money value in the save file (for searching)
+   - Enter the new money value you want to set in the save file.
 
 3. The script will create a backup of the original save file and create a new save file with the modified money value.
 
