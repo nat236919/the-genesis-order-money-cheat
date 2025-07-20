@@ -459,7 +459,24 @@ class TGOMoneyCheat:
         self.temp_file_name = 'temp_save_file.json'
         self.lz = LZString()
         self.is_money_modified = False
-    
+
+    def _check_prerequisites(self) -> None:
+        """
+        Checks if the necessary prerequisites are met for the cheat to work.
+        """
+        logging.info('Checking prerequisites...')        
+        if os.name != 'nt':
+            logging.error('This script is designed to run on Windows only.')
+            raise EnvironmentError('This script is designed to run on Windows only.')
+        
+        if not self.save_file_dir.exists():
+            logging.error(f'Save file directory does not exist: {self.save_file_dir}')
+            raise FileNotFoundError(f'Save file directory does not exist: {self.save_file_dir}')
+
+        if not self.save_file_dir.is_dir():
+            logging.error(f'Save file path is not a directory: {self.save_file_dir}')
+            raise NotADirectoryError(f'Save file path is not a directory: {self.save_file_dir}')
+
     def _get_rpg_save_files(self) -> None:
         """
         Retrieves the list of RPG save files from the save file directory.
@@ -611,14 +628,14 @@ class TGOMoneyCheat:
         """
         Starts the process of modifying the money value in the save file.
         """
+        self._check_prerequisites()
+
         self._get_rpg_save_files()
-        
         if not self.save_files:
             logging.error('No save files found!')
             return
-        
         logging.info('Save files found')
-        
+
         try:
             save_file_num = self._select_save_file()
         except ValueError as e:
