@@ -1,8 +1,11 @@
+import argparse
 import os
 import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
+import tkinter as tk
+from tkinter import messagebox, simpledialog, ttk
 
 
 logging.basicConfig(level=logging.INFO,
@@ -470,7 +473,7 @@ class TGOMoneyCheat:
     A class to modify the money value in RPG save files for 'The Genesis Order' game.
     """
 
-    def __init__(self):
+    def __init__(self, use_gui=True):
         """
         Initializes the TGOMoneyCheat class with default values.
         """
@@ -479,6 +482,11 @@ class TGOMoneyCheat:
         self.temp_file_name = 'temp_save_file.json'
         self.lz = LZString()
         self.is_money_modified = False
+        self.root = None
+        self.selected_file_index = None
+        self.current_money = None
+        self.new_money = None
+        self.use_gui = use_gui
 
     def _check_prerequisites(self) -> None:
         """
@@ -618,6 +626,50 @@ class TGOMoneyCheat:
             except ValueError:
                 logging.error('Invalid input! Please enter a number.')
 
+    def _select_save_file_gui(self):
+        """
+        GUI for selecting a save file.
+        """
+        self.root = tk.Tk()
+        self.root.title('Select Save File')
+        self.root.geometry('400x200')
+        label = tk.Label(self.root, text='Select a save file:')
+        label.pack(pady=10)
+        file_names = [file.name for file in self.save_files]
+        combo = ttk.Combobox(self.root, values=file_names, state='readonly')
+        combo.pack(pady=10)
+        combo.current(0)
+
+        def on_select():
+            self.selected_file_index = combo.current()
+            self.root.destroy()
+
+        select_btn = tk.Button(self.root, text='Select', command=on_select)
+        select_btn.pack(pady=10)
+        self.root.mainloop()
+
+    def _get_user_input_gui(self, prompt: str) -> int:
+        """
+        GUI for integer input.
+        """
+        value = None
+        while value is None:
+            value = simpledialog.askinteger('Input', prompt)
+            if value is None:
+                if messagebox.askyesno('Cancel', 'Do you want to cancel?'):
+                    self.root.quit()
+                    return None
+        return value
+
+    def _show_message_gui(self, title: str, message: str, error=False):
+        """
+        Show info or error message in GUI.
+        """
+        if error:
+            messagebox.showerror(title, message)
+        else:
+            messagebox.showinfo(title, message)
+
     def _modify_save_file(self, decoded_save_file: Dict[str, Any], current_money: int, new_money: int) -> None:
         """
         Modifies the money value in the decoded save file content.
@@ -680,43 +732,89 @@ class TGOMoneyCheat:
 
     def start(self) -> None:
         """
-        Starts the process of modifying the money value in the save file.
+        Starts the process of modifying the money value in the save file using GUI or CLI.
         """
-        self._check_prerequisites()
+        try:
+            self._check_prerequisites()
+        except Exception as e:
+            if self.use_gui:
+                tk.Tk().withdraw()
+                messagebox.showerror('Error', str(e))
+            else:
+                print(f'Error: {e}')
+            return
 
         self._get_rpg_save_files()
         if not self.save_files:
-            logging.error('No save files found!')
+            if self.use_gui:
+                tk.Tk().withdraw()
+                messagebox.showerror('Error', 'No save files found!')
+            else:
+                print('Error: No save files found!')
             return
-        logging.info('Save files found')
 
-        try:
+        if self.use_gui:
+            self._select_save_file_gui()
+            if self.selected_file_index is None:
+                return
+            selected_save_file = self._read_save_file(
+                self.save_files[self.selected_file_index])
+        else:
             save_file_num = self._select_save_file()
-        except ValueError as e:
-            logging.error(e)
-            return
+            if save_file_num is None:
+                return
+            selected_save_file = self._read_save_file(
+                self.save_files[save_file_num - 1])
 
-        selected_save_file = self._read_save_file(
-            self.save_files[save_file_num - 1])
         decoded_save_file = self._decode_save_file_content(selected_save_file)
 
-        current_money = self._get_user_input(
-            'Enter the current money value in the save file: ')
-        new_money = self._get_user_input(
-            'Enter the new money value you want to set: ')
+        if self.use_gui:
+            self.root = tk.Tk()
+            self.root.withdraw()
+            self.current_money = self._get_user_input_gui(
+                'Enter the current money value in the save file:')
+            if self.current_money is None:
+                return
+            self.new_money = self._get_user_input_gui(
+                'Enter the new money value you want to set:')
+            if self.new_money is None:
+                return
+        else:
+            self.current_money = self._get_user_input(
+                'Enter the current money value in the save file: ')
+            self.new_money = self._get_user_input(
+                'Enter the new money value you want to set: ')
 
-        self._modify_save_file(decoded_save_file, current_money, new_money)
+        self._modify_save_file(
+            decoded_save_file, self.current_money, self.new_money)
         if not self.is_money_modified:
-            logging.error(
-                'Money value not found in the save file! No changes made.')
+            if self.use_gui:
+                self._show_message_gui(
+                    'Error', 'Money value not found in the save file! No changes made.', error=True)
+            else:
+                print('Error: Money value not found in the save file! No changes made.')
             return
 
         self._save_temp_save_file(decoded_save_file)
-        self._create_new_save_file_from_temp(save_file_num)
+        if self.use_gui:
+            idx = self.selected_file_index + 1
+        else:
+            idx = save_file_num
+        self._create_new_save_file_from_temp(idx)
         self._clean_temp_save_file()
-        logging.info('Money value successfully modified.')
+        if self.use_gui:
+            self._show_message_gui(
+                'Success', 'Money value successfully modified.')
+        else:
+            print('Money value successfully modified.')
 
 
 if __name__ == '__main__':
-    tgo = TGOMoneyCheat()
+    parser = argparse.ArgumentParser(
+        description='The Genesis Order Money Cheat')
+    parser.add_argument('--cli', action='store_true',
+                        help='Run in CLI mode (no GUI)')
+    args = parser.parse_args()
+    use_gui = not args.cli
+    tgo = TGOMoneyCheat(use_gui=use_gui)
     tgo.start()

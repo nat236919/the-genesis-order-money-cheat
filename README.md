@@ -6,7 +6,7 @@ Money Cheat Script for The Genesis Order
 
 ## Overview
 
-This script allows you to modify the money value in RPG save files for the game [The Genesis Order](https://store.steampowered.com/app/2553870/The_Genesis_Order/) . It reads the save files, decodes and decompresses them, modifies the money value, and then re-encodes and compresses the save files.
+This script allows you to modify the money value in RPG save files for the game [The Genesis Order](https://store.steampowered.com/app/2553870/The_Genesis_Order/). It reads the save files, decodes and decompresses them, modifies the money value, and then re-encodes and compresses the save files.
 
 ## Requirements
 
@@ -25,15 +25,27 @@ This script allows you to modify the money value in RPG save files for the game 
 
 ## Usage
 
-1. Run the script:
+You can run the script in either GUI mode (default) or CLI mode.
 
+### GUI Mode (default)
+
+1. Run the script:
    ```sh
    python tgo_money_cheat.py
    ```
-
-2. Follow the prompts:
-
+2. Follow the graphical prompts:
    - Select a save file from the list of available save files.
+   - Enter the current money value in the save file (for searching)
+   - Enter the new money value you want to set in the save file.
+
+### CLI Mode
+
+1. Run the script with the `--cli` flag:
+   ```sh
+   python tgo_money_cheat.py --cli
+   ```
+2. Follow the command-line prompts:
+   - Select a save file by entering its number.
    - Enter the current money value in the save file (for searching)
    - Enter the new money value you want to set in the save file.
 
