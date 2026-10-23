@@ -3,13 +3,18 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict, Any
+import re
+from datetime import datetime
+from typing import List, Dict, Any, Optional
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Index of the game variable that holds the player's money in The Genesis Order
+MONEY_VARIABLE_ID = 2
 
 
 class LZString:
@@ -514,10 +519,14 @@ class TGOMoneyCheat:
         """
         Retrieves the list of RPG save files from the save file directory.
         """
-        self.save_files = [
-            file for file in self.save_file_dir.iterdir()
-            if file.name.startswith('DefaultTGOfile') and file.name.endswith('.rpgsave')
-        ]
+        def save_file_number(file: Path) -> int:
+            match = re.search(r'(\d+)\.rpgsave$', file.name)
+            return int(match.group(1)) if match else 0
+
+        self.save_files = sorted(
+            (file for file in self.save_file_dir.iterdir()
+             if file.name.startswith('DefaultTGOfile') and file.name.endswith('.rpgsave')),
+            key=save_file_number)
 
     def _read_save_file(self, save_file: Path) -> str:
         """
@@ -587,7 +596,7 @@ class TGOMoneyCheat:
             temp_save_file = json.load(f)
         encoded_save_file = self._encode_json_to_save_file_content(
             temp_save_file)
-        original_save_file.rename(backup_save_file)
+        original_save_file.replace(backup_save_file)
         with original_save_file.open('w') as f:
             f.write(encoded_save_file)
 
@@ -613,7 +622,8 @@ class TGOMoneyCheat:
             ValueError: If the selected save file number is invalid.
         """
         for i, file in enumerate(self.save_files):
-            logging.info(f'{i + 1}. {file.name}')
+            logging.info(
+                f'{i + 1}. {file.name} ({datetime.fromtimestamp(file.stat().st_mtime):%Y-%m-%d %H:%M})')
 
         while True:
             try:
@@ -635,10 +645,15 @@ class TGOMoneyCheat:
         self.root.geometry('400x200')
         label = tk.Label(self.root, text='Select a save file:')
         label.pack(pady=10)
-        file_names = [file.name for file in self.save_files]
+        file_names = [
+            f'{file.name} ({datetime.fromtimestamp(file.stat().st_mtime):%Y-%m-%d %H:%M})'
+            for file in self.save_files]
         combo = ttk.Combobox(self.root, values=file_names, state='readonly')
         combo.pack(pady=10)
-        combo.current(0)
+        # Default to the most recently saved file
+        latest_index = max(range(len(self.save_files)),
+                           key=lambda i: self.save_files[i].stat().st_mtime)
+        combo.current(latest_index)
 
         def on_select():
             self.selected_file_index = combo.current()
@@ -670,48 +685,66 @@ class TGOMoneyCheat:
         else:
             messagebox.showinfo(title, message)
 
-    def _modify_save_file(self, decoded_save_file: Dict[str, Any], current_money: int, new_money: int) -> None:
+    def _get_game_variables(self, decoded_save_file: Dict[str, Any]) -> Optional[List[Any]]:
         """
-        Modifies the money value in the decoded save file content.
+        Returns the game variables list from the decoded save file content.
 
         Args:
             decoded_save_file (Dict[str, Any]): The decoded save file content.
-            current_money (int): The current money value in the save file.
-            new_money (int): The new money value to set in the save file.
+
+        Returns:
+            Optional[List[Any]]: The game variables list, or None if the structure is invalid.
         """
         variables = decoded_save_file.get('variables')
         if not variables or not isinstance(variables, dict):
             logging.error(
                 'Invalid save file structure: variables section not found or invalid')
-            return
+            return None
 
-        game_variables = variables.get('_data', {}).get('@a', [])
+        game_variables = variables.get('_data', {}).get('@a')
         if not isinstance(game_variables, list):
             logging.error(
                 'Invalid save file structure: game variables section not found or invalid')
+            return None
+        return game_variables
+
+    def _get_current_money(self, decoded_save_file: Dict[str, Any]) -> Optional[int]:
+        """
+        Reads the money value from the decoded save file content.
+
+        Args:
+            decoded_save_file (Dict[str, Any]): The decoded save file content.
+
+        Returns:
+            Optional[int]: The current money value (0 if not set yet), or None if the structure is invalid.
+        """
+        game_variables = self._get_game_variables(decoded_save_file)
+        if game_variables is None:
+            return None
+        if len(game_variables) <= MONEY_VARIABLE_ID:
+            return 0
+        money = game_variables[MONEY_VARIABLE_ID]
+        if isinstance(money, bool) or not isinstance(money, (int, float)):
+            # The game leaves the variable empty until money is first earned
+            return 0
+        return int(money)
+
+    def _modify_save_file(self, decoded_save_file: Dict[str, Any], new_money: int) -> None:
+        """
+        Modifies the money value in the decoded save file content.
+
+        Args:
+            decoded_save_file (Dict[str, Any]): The decoded save file content.
+            new_money (int): The new money value to set in the save file.
+        """
+        game_variables = self._get_game_variables(decoded_save_file)
+        if game_variables is None:
             return
 
-        # Money is typically stored in a specific variable slot in RPG Maker games
-        # For The Genesis Order, we'll look for it in the first 100 variables
-        money_variable_range = min(100, len(game_variables))
-        found_matches = []
-
-        for idx in range(money_variable_range):
-            if isinstance(game_variables[idx], int) and game_variables[idx] == current_money:
-                found_matches.append(idx)
-
-        if len(found_matches) == 0:
-            logging.error(
-                'Money value not found in the expected variable range')
-            return
-        elif len(found_matches) > 1:
-            logging.warning(
-                f'Multiple matches found for money value {current_money} at indices: {found_matches}')
-            logging.warning(
-                'Using the first occurrence to avoid potential save file corruption')
-
-        # Update the first matching occurrence
-        game_variables[found_matches[0]] = new_money
+        # The Genesis Order keeps money in game variable #2, not in party._gold
+        while len(game_variables) <= MONEY_VARIABLE_ID:
+            game_variables.append(None)
+        game_variables[MONEY_VARIABLE_ID] = new_money
         self.is_money_modified = True
 
     def _get_user_input(self, prompt: str) -> int:
@@ -767,32 +800,36 @@ class TGOMoneyCheat:
                 self.save_files[save_file_num - 1])
 
         decoded_save_file = self._decode_save_file_content(selected_save_file)
+        self.current_money = self._get_current_money(decoded_save_file)
+
+        if self.current_money is None:
+            if self.use_gui:
+                tk.Tk().withdraw()
+                self._show_message_gui(
+                    'Error', 'Invalid save file structure! No changes made.', error=True)
+            else:
+                print('Error: Invalid save file structure! No changes made.')
+            return
 
         if self.use_gui:
             self.root = tk.Tk()
             self.root.withdraw()
-            self.current_money = self._get_user_input_gui(
-                'Enter the current money value in the save file:')
-            if self.current_money is None:
-                return
             self.new_money = self._get_user_input_gui(
-                'Enter the new money value you want to set:')
+                f'Current money: {self.current_money}\nEnter the new money value you want to set:')
             if self.new_money is None:
                 return
         else:
-            self.current_money = self._get_user_input(
-                'Enter the current money value in the save file: ')
+            print(f'Current money: {self.current_money}')
             self.new_money = self._get_user_input(
                 'Enter the new money value you want to set: ')
 
-        self._modify_save_file(
-            decoded_save_file, self.current_money, self.new_money)
+        self._modify_save_file(decoded_save_file, self.new_money)
         if not self.is_money_modified:
             if self.use_gui:
                 self._show_message_gui(
-                    'Error', 'Money value not found in the save file! No changes made.', error=True)
+                    'Error', 'Failed to modify the money value! No changes made.', error=True)
             else:
-                print('Error: Money value not found in the save file! No changes made.')
+                print('Error: Failed to modify the money value! No changes made.')
             return
 
         self._save_temp_save_file(decoded_save_file)

@@ -34,8 +34,8 @@ You can run the script in either GUI mode (default) or CLI mode.
    python tgo_money_cheat.py
    ```
 2. Follow the graphical prompts:
-   - Select a save file from the list of available save files.
-   - Enter the current money value in the save file (for searching)
+   - Select a save file from the list (the most recently saved one is selected by default).
+   - The current money value is read from the save file and shown to you.
    - Enter the new money value you want to set in the save file.
 
 ### CLI Mode
@@ -46,7 +46,7 @@ You can run the script in either GUI mode (default) or CLI mode.
    ```
 2. Follow the command-line prompts:
    - Select a save file by entering its number.
-   - Enter the current money value in the save file (for searching)
+   - The current money value is read from the save file and printed.
    - Enter the new money value you want to set in the save file.
 
 3. The script will create a backup of the original save file and create a new save file with the modified money value.

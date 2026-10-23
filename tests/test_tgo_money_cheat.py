@@ -1,7 +1,7 @@
 import pytest
 import json
 from pathlib import Path
-from tgo_money_cheat import TGOMoneyCheat, LZString
+from tgo_money_cheat import TGOMoneyCheat, LZString, MONEY_VARIABLE_ID
 
 
 class DummyLZString(LZString):
@@ -57,21 +57,61 @@ def test_decode_and_encode_save_file_content(cheat):
     assert json.loads(encoded)["variables"]["_data"]["@a"][2] == 1234
 
 
+def test_get_current_money(cheat):
+    decoded = cheat._decode_save_file_content(
+        make_fake_save_file(310, slot=MONEY_VARIABLE_ID))
+    assert cheat._get_current_money(decoded) == 310
+
+
+def test_get_current_money_unset(cheat):
+    decoded = cheat._decode_save_file_content(
+        make_fake_save_file(None, slot=MONEY_VARIABLE_ID))
+    assert cheat._get_current_money(decoded) == 0
+
+
+def test_get_current_money_invalid_structure(cheat):
+    assert cheat._get_current_money({"foo": "bar"}) is None
+
+
 def test_modify_save_file(cheat):
-    content = make_fake_save_file(5000, slot=10)
+    content = make_fake_save_file(5000, slot=MONEY_VARIABLE_ID)
     decoded = cheat._decode_save_file_content(content)
-    cheat._modify_save_file(decoded, 5000, 9999)
+    cheat._modify_save_file(decoded, 9999)
     arr = decoded["variables"]["_data"]["@a"]
-    assert 9999 in arr
+    assert arr[MONEY_VARIABLE_ID] == 9999
     assert arr.count(9999) == 1
     assert cheat.is_money_modified
 
 
-def test_modify_save_file_not_found(cheat):
-    content = make_fake_save_file(123, slot=0)
+def test_modify_save_file_does_not_touch_other_variables(cheat):
+    # Another variable holding the same value as money must stay untouched
+    content = make_fake_save_file(5000, slot=MONEY_VARIABLE_ID)
     decoded = cheat._decode_save_file_content(content)
-    cheat._modify_save_file(decoded, 999, 888)
+    decoded["variables"]["_data"]["@a"][10] = 5000
+    cheat._modify_save_file(decoded, 9999)
+    assert decoded["variables"]["_data"]["@a"][10] == 5000
+
+
+def test_modify_save_file_short_variables_list(cheat):
+    decoded = {"variables": {"_data": {"@a": [None]}}}
+    cheat._modify_save_file(decoded, 500)
+    assert decoded["variables"]["_data"]["@a"][MONEY_VARIABLE_ID] == 500
+    assert cheat.is_money_modified
+
+
+def test_modify_save_file_invalid_structure(cheat):
+    cheat._modify_save_file({"foo": "bar"}, 888)
     assert not cheat.is_money_modified
+
+
+def test_save_files_sorted_numerically(tmp_path):
+    for n in (10, 2, 1):
+        (tmp_path / f"DefaultTGOfile{n}.rpgsave").write_text("x")
+    cheat = TGOMoneyCheat(use_gui=False)
+    cheat.save_file_dir = tmp_path
+    cheat._get_rpg_save_files()
+    assert [f.name for f in cheat.save_files] == [
+        "DefaultTGOfile1.rpgsave", "DefaultTGOfile2.rpgsave", "DefaultTGOfile10.rpgsave"]
 
 
 def test_save_and_create_new_save_file(tmp_path, monkeypatch):
@@ -92,3 +132,8 @@ def test_save_and_create_new_save_file(tmp_path, monkeypatch):
     assert (save_dir / "DefaultTGOfile1.rpgsave").exists()
     cheat._clean_temp_save_file()
     assert not (save_dir / cheat.temp_file_name).exists()
+
+    # Running again must overwrite the existing backup instead of failing
+    cheat._save_temp_save_file(data)
+    cheat._create_new_save_file_from_temp(1)
+    assert (save_dir / "DefaultTGOfile1.bak").exists()
